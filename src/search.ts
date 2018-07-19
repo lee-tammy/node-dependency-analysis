@@ -1,34 +1,59 @@
 import * as acorn from 'acorn';
+import { Program } from 'estree';
+const walk = require('acorn/dist/walk');
+
 export interface SearchValue {
-  http: boolean;
+  requiredModules: string[]
 }
 
-let tokenArray: acorn.Token[] = [];
-let b = false;
-export async function search(file: string): Promise<any> {
-  console.log('...searching...');
-  const a = await acorn.parse(file, {
-      onToken: tokenArray
-  });
- //console.log(tokenArray);
- tokenArray.forEach((token) => {
-    if(b == true){
-        console.log(token);
-        b=false;
-    } 
+/**
+ * Searches file content for points of interest
+ * 
+ * @param content contents of a file
+ */
+export async function search(content: string): Promise<SearchValue> {
+    const tree = await acorn.parse(content);
+    const nodeArr: acorn.Node[] = getRequireCalls(tree);
+    const moduleArr: string[] = getRequiredModules(nodeArr);
+
+    const value = {requiredModules: moduleArr};
+    console.log(JSON.stringify(tree, null, 2))
     
-    if(token.value === 'require'){
-         console.log(token);
-         b=true;
-     }
-     
- })
-  //console.log(JSON.stringify(a));
-//   a.body.forEach((n) => {
-//       console.log('*****');
-//       console.log(n)
-//     });
-  return {http:false};
+    return value;
 }
 
+/**
+ * Returns a list of acorn nodes that contain 'require' call expressions
+ * 
+ * @param tree abstract syntax tree 
+ */
+function getRequireCalls(tree: Program){
+    const requireCalls: acorn.Node[] = [];
+    walk.simple(tree, {
+        CallExpression: (e: any) => {
+            if(e.callee.name === 'require'){
+                requireCalls.push(e);
+            }
+        }  
+    });
+    return requireCalls;
+}
 
+/**
+ * Returns a list of the modules being required
+ * 
+ * @param requireNodes array of acorn nodes that contain 'require' call expression
+ */
+function getRequiredModules(requireNodes: acorn.Node[]): string[]{
+    const requiredModules: string[] = [];
+    requireNodes.forEach((node: any) => {
+        const arg = node.arguments[0];
+        if(arg.type === 'Literal'){
+            requiredModules.push(arg.value);
+        }else{
+            console.log('dynamic require call')
+        }
+    });
+
+    return requiredModules;
+}

@@ -5,14 +5,17 @@
   "main": "index.js",
   "dependencies": {
     "acorn": "^5.7.1",
+    "ava": "^0.25.0",
     "node": "^10.6.0"
   },
   "devDependencies": {
+    "@types/acorn": "^4.0.3",
+    "@types/node": "^10.5.2",
     "gts": "^0.7.1",
     "typescript": "~2.8.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "ava build/test/test*.js",
     "check": "gts check",
     "clean": "gts clean",
     "compile": "tsc -p .",

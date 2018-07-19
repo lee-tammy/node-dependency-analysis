@@ -1,7 +1,10 @@
 import {SearchValue} from './search';
 
-run("const http = require('http');");
+run('const b = \'hihttp\';const a = require(`${\'http\'}`);');
+
 
 async function run(file: string): Promise<SearchValue> {
-  return require('./search').search(file);
+  const f = require('./search').search(file);
+  f.then(console.log)
+  return f;
 }
