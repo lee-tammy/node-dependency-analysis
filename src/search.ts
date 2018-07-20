@@ -1,10 +1,18 @@
 import * as acorn from 'acorn';
-import {CallExpression, Literal, Node, Program, SimpleLiteral, TemplateLiteral} from 'estree';
+import {CallExpression, Node, Program} from 'estree';
 
 const walk = require('acorn/dist/walk');
 
 export interface SearchValue {
-  requiredModules: string[];
+  requiredModules: Map<string, Position>;
+  dynamicEvals: Position[];
+}
+
+export interface Position {
+  lineStart: number;
+  lineEnd: number;
+  colStart: number;
+  colEnd: number;
 }
 
 /**
@@ -13,12 +21,11 @@ export interface SearchValue {
  * @param content contents of a file
  */
 export async function search(content: string): Promise<SearchValue> {
-  const tree = await acorn.parse(content);
+  const tree = await acorn.parse(content, {locations: true});
   const nodeArr: Node[] = getRequireCalls(tree);
-  const moduleArr: string[] = getRequiredModules(nodeArr);
-  const value = {requiredModules: moduleArr};
+  const result: SearchValue = getRequiredModules(nodeArr);
 
-  return value;
+  return result;
 }
 
 /**
@@ -44,18 +51,28 @@ function getRequireCalls(tree: Program) {
  * @param requireNodes array of acorn nodes that contain 'require' call
  * expression
  */
-function getRequiredModules(requireNodes: Node[]): string[] {
-  const requiredModules: string[] = [];
+function getRequiredModules(requireNodes: Node[]): SearchValue {
+  const requiredModules = new Map<string, Position>();
+  const dynamicEvalPos: Position[] = [];
   requireNodes.forEach((node: Node) => {
+    const pos: Position = {lineStart: 0, lineEnd: 0, colStart: 0, colEnd: 0};
+    if (node.loc !== undefined && node.loc !== null) {
+      pos.lineStart = node.loc.start.line, pos.lineEnd = node.loc.end.line,
+      pos.colStart = node.loc.start.column, pos.colEnd = node.loc.end.column;
+    }
+
     if (node.type === 'Literal' && node.value !== null &&
         node.value !== undefined) {
-      requiredModules.push(node.value.toString());
+      requiredModules.set(node.value.toString(), pos);
     } else if (node.type === 'TemplateLiteral') {
       const e = node.expressions[0];
       if (e.type === 'Literal' && e.value !== null && e.value !== undefined) {
-        requiredModules.push(e.value.toString());
+        requiredModules.set(e.value.toString(), pos);
       }
+    } else {
+      dynamicEvalPos.push(pos);
     }
   });
-  return requiredModules;
+
+  return {requiredModules, dynamicEvals: dynamicEvalPos};
 }
