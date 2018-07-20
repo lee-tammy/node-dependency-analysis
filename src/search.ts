@@ -3,11 +3,20 @@ import {CallExpression, Node, Program} from 'estree';
 
 const walk = require('acorn/dist/walk');
 
+/**
+ * requiredModules: A map of module names and the position where they were
+ * required in a file dynamicEvals: An array of the locations where require is
+ * called dynamically
+ */
 export interface SearchValue {
   requiredModules: Map<string, Position>;
   dynamicEvals: Position[];
 }
 
+/**
+ * location of where require is called dynamically
+ * TODO: remove columns?!??!? --- is it needed?
+ */
 export interface Position {
   lineStart: number;
   lineEnd: number;
@@ -46,7 +55,7 @@ function getRequireCalls(tree: Program) {
 }
 
 /**
- * Returns a list of the modules being required
+ * Iterates through require nodes and returns a constructed SearchValue object
  *
  * @param requireNodes array of acorn nodes that contain 'require' call
  * expression
@@ -69,6 +78,8 @@ function getRequiredModules(requireNodes: Node[]): SearchValue {
       if (e.type === 'Literal' && e.value !== null && e.value !== undefined) {
         requiredModules.set(e.value.toString(), pos);
       }
+
+      // Require call with dynamic evaluation
     } else {
       dynamicEvalPos.push(pos);
     }
