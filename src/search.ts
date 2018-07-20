@@ -1,59 +1,61 @@
 import * as acorn from 'acorn';
-import { Program } from 'estree';
+import {CallExpression, Literal, Node, Program, SimpleLiteral, TemplateLiteral} from 'estree';
+
 const walk = require('acorn/dist/walk');
 
 export interface SearchValue {
-  requiredModules: string[]
+  requiredModules: string[];
 }
 
 /**
  * Searches file content for points of interest
- * 
+ *
  * @param content contents of a file
  */
 export async function search(content: string): Promise<SearchValue> {
-    const tree = await acorn.parse(content);
-    const nodeArr: acorn.Node[] = getRequireCalls(tree);
-    const moduleArr: string[] = getRequiredModules(nodeArr);
+  const tree = await acorn.parse(content);
+  const nodeArr: Node[] = getRequireCalls(tree);
+  const moduleArr: string[] = getRequiredModules(nodeArr);
+  const value = {requiredModules: moduleArr};
 
-    const value = {requiredModules: moduleArr};
-    console.log(JSON.stringify(tree, null, 2))
-    
-    return value;
+  return value;
 }
 
 /**
  * Returns a list of acorn nodes that contain 'require' call expressions
- * 
- * @param tree abstract syntax tree 
+ *
+ * @param tree abstract syntax tree
  */
-function getRequireCalls(tree: Program){
-    const requireCalls: acorn.Node[] = [];
-    walk.simple(tree, {
-        CallExpression: (e: any) => {
-            if(e.callee.name === 'require'){
-                requireCalls.push(e);
-            }
-        }  
-    });
-    return requireCalls;
+function getRequireCalls(tree: Program) {
+  const requireCalls: Node[] = [];
+  walk.simple(tree, {
+    CallExpression(e: CallExpression) {
+      if (e.callee.type === 'Identifier' && e.callee.name === 'require') {
+        requireCalls.push(e.arguments[0]);
+      }
+    }
+  });
+  return requireCalls;
 }
 
 /**
  * Returns a list of the modules being required
- * 
- * @param requireNodes array of acorn nodes that contain 'require' call expression
+ *
+ * @param requireNodes array of acorn nodes that contain 'require' call
+ * expression
  */
-function getRequiredModules(requireNodes: acorn.Node[]): string[]{
-    const requiredModules: string[] = [];
-    requireNodes.forEach((node: any) => {
-        const arg = node.arguments[0];
-        if(arg.type === 'Literal'){
-            requiredModules.push(arg.value);
-        }else{
-            console.log('dynamic require call')
-        }
-    });
-
-    return requiredModules;
+function getRequiredModules(requireNodes: Node[]): string[] {
+  const requiredModules: string[] = [];
+  requireNodes.forEach((node: Node) => {
+    if (node.type === 'Literal' && node.value !== null &&
+        node.value !== undefined) {
+      requiredModules.push(node.value.toString());
+    } else if (node.type === 'TemplateLiteral') {
+      const e = node.expressions[0];
+      if (e.type === 'Literal' && e.value !== null && e.value !== undefined) {
+        requiredModules.push(e.value.toString());
+      }
+    }
+  });
+  return requiredModules;
 }
