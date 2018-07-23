@@ -1,4 +1,5 @@
 import test from 'ava';
+import assert from 'assert';
 import * as search from '../src/search';
 
 test(
@@ -46,11 +47,13 @@ test('line number is accurate for search', async t => {
   const result = await search.search(content);
 
   const httpPosition = (result.requiredModules.get('http'));
-  if (httpPosition) {
+  
+  if(assert(httpPosition, 'position of http is null') && httpPosition !== undefined){
     t.deepEqual(httpPosition.lineStart, 1);
   }
+
   const fsPosition = (result.requiredModules.get('fs'));
-  if (fsPosition) {
+  if (assert(fsPosition, 'position of fs is null') && fsPosition !== undefined) {
     t.deepEqual(fsPosition.lineStart, 2);
   }
 });
@@ -61,7 +64,7 @@ test(
     async t => {
       const content = 'const a = require(\'h\' + \'t\' + \'t\' + \'p\');';
       const result = await search.search(content);
-      if (result.dynamicEvals[0]) {
+      if (assert(result.dynamicEvals[0], 'position does not exist in array')) {
         t.deepEqual(result.dynamicEvals[0].lineStart, 1);
       }
     });
@@ -73,13 +76,13 @@ test(
       const content1 =
           `const a = \'anotherhttp\'\nconst b = require(a.substring(6));`;
       const result1 = await search.search(content1);
-      if (result1.dynamicEvals[0]) {
+      if (assert(result1.dynamicEvals[0], 'position does not exist in array')) {
         t.deepEqual(result1.dynamicEvals[0].lineStart, 2);
       }
 
       const content2 = 'const a = require(\'anotherhttp\'.substring(6))';
       const result2 = await search.search(content2);
-      if (result2.dynamicEvals[0]) {
+      if (assert(result2.dynamicEvals[0], 'position does not exist in array')) {
         t.deepEqual(result2.dynamicEvals[0].lineStart, 1);
       }
     });
@@ -91,7 +94,7 @@ test(
       const content =
           'function returnHttp(){return \'http\';}\nconst a = require(returnHttp);';
       const result = await search.search(content);
-      if (result.dynamicEvals[0]) {
+      if (assert(result.dynamicEvals[0], 'position does not exist in array')) {
         t.deepEqual(result.dynamicEvals[0].lineStart, 2);
       }
     });
