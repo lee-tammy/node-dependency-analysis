@@ -1,5 +1,5 @@
 import * as acorn from 'acorn';
-import {CallExpression, Node, Program} from 'estree';
+import {CallExpression, Node} from 'estree';
 
 const walk = require('acorn/dist/walk');
 
@@ -33,7 +33,7 @@ export async function search(content: string): Promise<SearchValue> {
   const tree = await acorn.parse(content, {locations: true});
   const nodeArr: Node[] = getRequireCalls(tree);
   const result: SearchValue = getRequiredModules(nodeArr);
-
+  
   return result;
 }
 
@@ -42,7 +42,7 @@ export async function search(content: string): Promise<SearchValue> {
  *
  * @param tree abstract syntax tree
  */
-function getRequireCalls(tree: Program) {
+function getRequireCalls(tree: Node) {
   const requireCalls: Node[] = [];
   walk.simple(tree, {
     CallExpression(e: CallExpression) {
