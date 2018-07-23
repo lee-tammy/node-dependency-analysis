@@ -1,5 +1,4 @@
 import test from 'ava';
-
 import * as search from '../src/search';
 
 test(
@@ -23,9 +22,14 @@ test(
     'searchValue should have http module when require arg has string' +
         'interpolation',
     async t => {
-      const content = 'const a = require(`${\'http\'}`);';
-      const result = await search.search(content);
-      t.true(result.requiredModules.has('http'));
+      const content1 = 'const a = require(`${\'http\'}`);';
+      const result1 = await search.search(content1);
+      t.true(result1.requiredModules.has('http'));
+
+      // TODO: THIS FAILS
+      const content2 = 'const a = require(`http`);'
+      const result2 = await search.search(content2);
+      t.true(result2.requiredModules.has('http'));
     });
 
 test('searchValue should have http and fs module', async t => {
