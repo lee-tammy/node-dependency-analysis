@@ -65,19 +65,18 @@ function getRequiredModules(requireNodes: Node[]): SearchValue {
   const dynamicEvalPos: Position[] = [];
   requireNodes.forEach((node: Node) => {
     const pos: Position = {lineStart: 0, lineEnd: 0, colStart: 0, colEnd: 0};
-    if (node.loc !== undefined && node.loc !== null) {
+    if (node.loc) {
       pos.lineStart = node.loc.start.line, pos.lineEnd = node.loc.end.line,
       pos.colStart = node.loc.start.column, pos.colEnd = node.loc.end.column;
     }
 
-    if (node.type === 'Literal' && node.value !== null &&
-        node.value !== undefined) {
+    if (node.type === 'Literal' && node.value) {
       requiredModules.set(node.value.toString(), pos);
     } else if (node.type === 'TemplateLiteral') {
-      const e = node.expressions[0];
-      if (e.type === 'Literal' && e.value !== null && e.value !== undefined) {
-        requiredModules.set(e.value.toString(), pos);
-      }
+        const e = node.expressions[0];
+        if (e.type === 'Literal' && e.value) {
+          requiredModules.set(e.value.toString(), pos);
+        }
 
       // Require call with dynamic evaluation
     } else {

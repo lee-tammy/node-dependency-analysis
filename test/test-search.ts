@@ -10,13 +10,12 @@ test(
       const result = await search.search(content);
       t.true(result.requiredModules.has('http'));
     });
-
+    
 test(
     'searchValue should not have http module when there are no require calls',
     async t => {
       const content = 'console.log(\'http\')';
       const result = await search.search(content);
-      console.log(' HELLEAHFK' + result.requiredModules.keys());
       t.true(result.requiredModules.size === 0);
     });
 
