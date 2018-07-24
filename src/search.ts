@@ -73,16 +73,20 @@ function getRequiredModules(requireNodes: Node[]): SearchValue {
     if (node.type === 'Literal' && node.value) {
       requiredModules.set(node.value.toString(), pos);
     } else if (node.type === 'TemplateLiteral') {
-        const e = node.expressions[0];
-        if (e.type === 'Literal' && e.value) {
-          requiredModules.set(e.value.toString(), pos);
+      const exp = node.expressions[0];
+      const qua = node.quasis
+      if(node.expressions.length === 1 && qua.length === 2 && qua[0].value.cooked === '' && qua[1].value.cooked === ''){
+        if(exp.type === 'Literal' && exp.value){
+          requiredModules.set(exp.value.toString(), pos);
         }
-
-      // Require call with dynamic evaluation
+      }else if(qua.length === 1){
+        requiredModules.set(qua[0].value.cooked.toString(), pos);
+      }
+    
+    // Require call with dynamic evaluation
     } else {
       dynamicEvalPos.push(pos);
     }
   });
-
   return {requiredModules, dynamicEvals: dynamicEvalPos};
 }

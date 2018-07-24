@@ -20,15 +20,13 @@ test(
     });
 
 test(
-    'searchValue should have http module when require arg has string' +
-        'interpolation',
+    'searchValue should have http module when require arg in template literals',
     async t => {
       const content1 = 'const a = require(`${\'http\'}`);';
       const result1 = await search.search(content1);
       t.true(result1.requiredModules.has('http'));
 
-      // TODO: THIS FAILS
-      const content2 = 'const a = require(`http`);'
+      const content2 = 'const a = require(`http`);';
       const result2 = await search.search(content2);
       t.true(result2.requiredModules.has('http'));
     });
@@ -48,18 +46,19 @@ test('line number is accurate for search', async t => {
 
   const httpPosition = (result.requiredModules.get('http'));
   
-  if(assert(httpPosition, 'position of http is null') && httpPosition !== undefined){
+  if(httpPosition !== undefined && assert(httpPosition !== null, 'position of http is null') ){
     t.deepEqual(httpPosition.lineStart, 1);
   }
 
   const fsPosition = (result.requiredModules.get('fs'));
-  if (assert(fsPosition, 'position of fs is null') && fsPosition !== undefined) {
+  //console.log('HEKWHJFKJSFKBFSBF fs: ' + fsPosition);
+  if(t.true(assert(fsPosition === null && fsPosition !== undefined))){
     t.deepEqual(fsPosition.lineStart, 2);
   }
 });
 
 test(
-    'search function should return correct dynamic eval positoin with' +
+    'search function should return correct dynamic eval position with ' +
         'require arg as a concatenation of strings that forms http',
     async t => {
       const content = 'const a = require(\'h\' + \'t\' + \'t\' + \'p\');';
@@ -70,7 +69,7 @@ test(
     });
 
 test(
-    'search function should return correct dynamic eval position with' +
+    'search function should return correct dynamic eval position with ' +
         'require arg as a substring that forms http',
     async t => {
       const content1 =
@@ -88,7 +87,7 @@ test(
     });
 
 test(
-    'search function should return correct dynamic eval position with' +
+    'search function should return correct dynamic eval position with ' +
         'require arg as a function that returns http',
     async t => {
       const content =
