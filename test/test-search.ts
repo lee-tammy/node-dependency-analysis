@@ -19,6 +19,12 @@ test(
       t.deepEqual(result.requiredModules.size, 0);
     });
 
+test('searchValue should not contain util modules', async t => {
+  const content = 'const a = require(\'util\');\nconst b = require(\'path\');';
+  const result = await search.search(content);
+  t.deepEqual(result.requiredModules.size, 0);
+});
+
 test(
     'searchValue should have http module when require arg in template literals',
     async t => {
