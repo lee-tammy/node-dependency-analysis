@@ -45,16 +45,12 @@ test('line number is accurate for search', async t => {
   const result = await search.search(content);
 
   const httpPosition = (result.requiredModules.get('http'));
-  
-  if(httpPosition !== undefined && assert(httpPosition !== null, 'position of http is null') ){
-    t.deepEqual(httpPosition.lineStart, 1);
-  }
+  t.true(!!httpPosition);
+  t.deepEqual(httpPosition!.lineStart, 1);
 
   const fsPosition = (result.requiredModules.get('fs'));
-  //console.log('HEKWHJFKJSFKBFSBF fs: ' + fsPosition);
-  /*if(t.true(assert(fsPosition === null && fsPosition !== undefined))){
-    t.deepEqual(fsPosition.lineStart, 2);
-  }*/
+  t.true(!!fsPosition);
+  t.deepEqual(fsPosition!.lineStart, 2);
 });
 
 test(
@@ -63,9 +59,8 @@ test(
     async t => {
       const content = 'const a = require(\'h\' + \'t\' + \'t\' + \'p\');';
       const result = await search.search(content);
-      if (assert(result.dynamicEvals[0], 'position does not exist in array')) {
-        t.deepEqual(result.dynamicEvals[0].lineStart, 1);
-      }
+      t.true(!!result.dynamicEvals);
+      t.deepEqual(result.dynamicEvals[0].lineStart, 1);
     });
 
 test(
@@ -75,15 +70,13 @@ test(
       const content1 =
           `const a = \'anotherhttp\'\nconst b = require(a.substring(6));`;
       const result1 = await search.search(content1);
-      if (assert(result1.dynamicEvals[0], 'position does not exist in array')) {
-        t.deepEqual(result1.dynamicEvals[0].lineStart, 2);
-      }
+      t.true(!!result1.dynamicEvals);
+      t.deepEqual(result1.dynamicEvals[0].lineStart, 2);
 
       const content2 = 'const a = require(\'anotherhttp\'.substring(6))';
       const result2 = await search.search(content2);
-      if (assert(result2.dynamicEvals[0], 'position does not exist in array')) {
-        t.deepEqual(result2.dynamicEvals[0].lineStart, 1);
-      }
+      t.true(!!result2.dynamicEvals);
+      t.deepEqual(result2.dynamicEvals[0].lineStart, 1);
     });
 
 test(
@@ -93,13 +86,6 @@ test(
       const content =
           'function returnHttp(){return \'http\';}\nconst a = require(returnHttp);';
       const result = await search.search(content);
-      if (assert(result.dynamicEvals[0], 'position does not exist in array')) {
-        t.deepEqual(result.dynamicEvals[0].lineStart, 2);
-      }
+      t.true(!!result.dynamicEvals);
+      t.deepEqual(result.dynamicEvals[0].lineStart, 2);
     });
-
-/*test('require callee is defined as a variable', async t => {
-  const content = 'const r = require;\n something = r(\'http\');';
-  const result = await search.search(content);
-  //   t.true(result.requiredModules.indexOf('http') === -1);
-});*/

@@ -15,7 +15,6 @@ export interface SearchValue {
 
 /**
  * location of where require is called dynamically
- * TODO: remove columns?!??!? --- is it needed?
  */
 export interface Position {
   lineStart: number;
@@ -74,7 +73,7 @@ function getRequiredModules(requireNodes: Node[]): SearchValue {
       requiredModules.set(node.value.toString(), pos);
     } else if (node.type === 'TemplateLiteral') {
       const exp = node.expressions[0];
-      const qua = node.quasis
+      const qua = node.quasis;
 
       // Accepts expression interpolation `${}` without characters outside of curly braces 
       if(node.expressions.length === 1 && qua.length === 2 && qua[0].value.raw === '' && qua[1].value.raw === ''){
