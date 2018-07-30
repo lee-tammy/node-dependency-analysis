@@ -14,9 +14,14 @@ test(
 test(
     'searchValue should not have http module when there are no require calls',
     async t => {
-      const content = 'console.log(\'http\')';
-      const result = await search.search(content);
-      t.deepEqual(result.requiredModules.size, 0);
+      const content1 = 'console.log(\'http\')';
+      const result1 = await search.search(content1);
+      t.deepEqual(result1.requiredModules.size, 0);
+
+      const content2 = 'const a = \'require(\\\'http\\\')\';';
+      const result2 = await search.search(content2);
+      t.deepEqual(result2.dynamicEvals.length, 0);
+      t.deepEqual(result2.requiredModules.size, 0);
     });
 
 test('searchValue should not contain util modules', async t => {
