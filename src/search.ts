@@ -3,7 +3,7 @@ import {CallExpression, Node} from 'estree';
 
 const walk = require('acorn/dist/walk');
 
-export const iOModules: string[] =
+export const ioModules: string[] =
     ['http', 'fs', 'https', 'http2', 'net', 'datagram', 'child_process'];
 
 /**
@@ -34,8 +34,14 @@ export interface Position {
 export async function search(content: string): Promise<SearchValue> {
   const tree = await acorn.parse(content, {locations: true});
   const nodeArr: Node[] = getRequireCalls(tree);
-  const result: SearchValue = getRequiredModules(nodeArr, iOModules);
-
+  const result: SearchValue = getRequiredModules(nodeArr);
+  const moduleMap = result.requiredModules;
+  moduleMap.forEach((val, key) => {
+    if (!ioModules.includes(key)) {
+      moduleMap.delete(key);
+    }
+  });
+  result.requiredModules = moduleMap;
   return result;
 }
 
@@ -62,8 +68,7 @@ function getRequireCalls(tree: Node) {
  * @param requireNodes array of acorn nodes that contain 'require' call
  * expression
  */
-function getRequiredModules(
-    requireNodes: Node[], iOmodules: string[]): SearchValue {
+function getRequiredModules(requireNodes: Node[]): SearchValue {
   const requiredModules = new Map<string, Position>();
   const dynamicEvalPos: Position[] = [];
   requireNodes.forEach((node: Node) => {
@@ -74,10 +79,7 @@ function getRequiredModules(
     }
 
     if (node.type === 'Literal' && node.value) {
-      const mod = node.value.toString();
-      if (iOmodules.includes(mod)) {
-        requiredModules.set(mod, pos);
-      }
+      requiredModules.set(node.value.toString(), pos);
     } else if (node.type === 'TemplateLiteral') {
       const exp = node.expressions[0];
       const qua = node.quasis;
@@ -87,18 +89,12 @@ function getRequiredModules(
       if (node.expressions.length === 1 && qua.length === 2 &&
           qua[0].value.raw === '' && qua[1].value.raw === '') {
         if (exp.type === 'Literal' && exp.value) {
-          const mod = exp.value.toString();
-          if (iOmodules.includes(mod)) {
-            requiredModules.set(mod, pos);
-          }
+          requiredModules.set(exp.value.toString(), pos);
         }
 
         // String interpolation without expression
       } else if (qua.length === 1) {
-        const mod = qua[0].value.raw;
-        if (iOmodules.includes(mod)) {
-          requiredModules.set(mod, pos);
-        }
+        requiredModules.set(qua[0].value.raw, pos);
       }
 
       // If expression is not a literal or a template literal, it is dynamically
