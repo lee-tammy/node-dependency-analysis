@@ -1,5 +1,5 @@
 import test from 'ava';
-import assert from 'assert';
+
 import * as search from '../src/search';
 
 test(
@@ -10,13 +10,13 @@ test(
       const result = await search.search(content);
       t.true(result.requiredModules.has('http'));
     });
-    
+
 test(
     'searchValue should not have http module when there are no require calls',
     async t => {
       const content = 'console.log(\'http\')';
       const result = await search.search(content);
-      t.true(result.requiredModules.size === 0);
+      t.deepEqual(result.requiredModules.size, 0);
     });
 
 test(

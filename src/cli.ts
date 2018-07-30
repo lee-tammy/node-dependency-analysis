@@ -1,4 +1,4 @@
-import {SearchValue, search} from './search';
+import {search, SearchValue} from './search';
 
 const temp = 'const c = require(`http`);';
 run(temp);

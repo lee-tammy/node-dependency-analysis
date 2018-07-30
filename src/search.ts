@@ -32,7 +32,7 @@ export async function search(content: string): Promise<SearchValue> {
   const tree = await acorn.parse(content, {locations: true});
   const nodeArr: Node[] = getRequireCalls(tree);
   const result: SearchValue = getRequiredModules(nodeArr);
-  
+
   return result;
 }
 
@@ -75,16 +75,21 @@ function getRequiredModules(requireNodes: Node[]): SearchValue {
       const exp = node.expressions[0];
       const qua = node.quasis;
 
-      // Accepts expression interpolation `${}` without characters outside of curly braces 
-      if(node.expressions.length === 1 && qua.length === 2 && qua[0].value.raw === '' && qua[1].value.raw === ''){
-        if(exp.type === 'Literal' && exp.value){
+      // String interpolation with expression inside `${}`, and no characters
+      // outside of the curly braces
+      if (node.expressions.length === 1 && qua.length === 2 &&
+          qua[0].value.raw === '' && qua[1].value.raw === '') {
+        if (exp.type === 'Literal' && exp.value) {
           requiredModules.set(exp.value.toString(), pos);
         }
-      }else if(qua.length === 1){
+
+        // String interpolation without expression
+      } else if (qua.length === 1) {
         requiredModules.set(qua[0].value.raw.toString(), pos);
       }
-    
-    // Require call with dynamic evaluation
+
+      // If expression is not a literal or a template literal, it is dynamically
+      // evaluated
     } else {
       dynamicEvalPos.push(pos);
     }
