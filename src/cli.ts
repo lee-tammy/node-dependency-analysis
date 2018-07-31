@@ -1,9 +1,9 @@
-import {search, SearchValue} from './search';
+import {SearchValue} from './search';
 
-const temp = 'require(\'http\')';
+const temp = 'const b = \'hihttp\';const a = require(\'http\');';
 run(temp);
 
 async function run(fileContent: string): Promise<SearchValue> {
-  const f = search(fileContent);
+  const f = require('./search').search(fileContent);
   return f;
 }

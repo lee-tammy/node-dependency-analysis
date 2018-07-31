@@ -7,13 +7,16 @@ export const ioModules: string[] =
     ['http', 'fs', 'https', 'http2', 'net', 'datagram', 'child_process'];
 
 /**
- * requiredModules: A map of module names and the position where they were
- * required in a file dynamicEvals: An array of the locations where require is
- * called dynamically
+ * requiredModules: A map of I/O module names and the position where they were
+ * required in a file
+ * dynamicArgs: An array of positions where arguments are dynamically evaluated
+ * dynamicRequire: An array of the positions where there are dynamic require
+ * calls
  */
 export interface SearchValue {
   requiredModules: Map<string, Position>;
-  dynamicEvals: Position[];
+  dynamicArgs: Position[];
+  dynamicRequire: Position[];
 }
 
 /**
@@ -41,6 +44,8 @@ export async function search(content: string): Promise<SearchValue> {
       moduleMap.delete(key);
     }
   });
+  const dynamicRequireCalls = getDynamicRequireCalls(tree);
+  result.dynamicRequire = result.dynamicRequire.concat(dynamicRequireCalls);
   return result;
 }
 
@@ -69,13 +74,9 @@ function getRequireCalls(tree: Node) {
  */
 function getRequiredModules(requireNodes: Node[]): SearchValue {
   const requiredModules = new Map<string, Position>();
-  const dynamicEvalPos: Position[] = [];
+  const dynamicArgPos: Position[] = [];
   requireNodes.forEach((node: Node) => {
-    const pos: Position = {lineStart: 0, lineEnd: 0, colStart: 0, colEnd: 0};
-    if (node.loc) {
-      pos.lineStart = node.loc.start.line, pos.lineEnd = node.loc.end.line,
-      pos.colStart = node.loc.start.column, pos.colEnd = node.loc.end.column;
-    }
+    const pos: Position = getPosition(node);
 
     if (node.type === 'Literal' && node.value) {
       requiredModules.set(node.value.toString(), pos);
@@ -99,8 +100,53 @@ function getRequiredModules(requireNodes: Node[]): SearchValue {
       // If expression is not a literal or a template literal, it is dynamically
       // evaluated
     } else {
-      dynamicEvalPos.push(pos);
+      dynamicArgPos.push(pos);
     }
   });
-  return {requiredModules, dynamicEvals: dynamicEvalPos};
+  return {requiredModules, dynamicArgs: dynamicArgPos, dynamicRequire: []};
+}
+
+/**
+ * Returns list of positions where there are dynamic require calls
+ *
+ * @param tree abstract syntax tree
+ */
+function getDynamicRequireCalls(tree: Node): Position[] {
+  const dynamicRequireCalls: Position[] = [];
+  walk.ancestor(tree, {
+
+    Identifier(n: Node, ancestors: Node[]) {
+      if (n.type === 'Identifier' && n && n !== undefined) {
+        if (n.name === 'require') {
+          // last element is current node and second to last it the node's
+          // parent
+          const parent: Node = ancestors[ancestors.length - 2];
+          if (parent.type !== 'CallExpression' ||
+              parent.arguments.length !== 1) {
+            // Dynamic Require call
+
+            // Get the entire line which is the second element of ancestors
+            // array b/c 1st is the program
+            const pos: Position = getPosition(ancestors[1]);
+            dynamicRequireCalls.push(pos);
+          }
+        }
+      }
+    }
+  });
+  return dynamicRequireCalls;
+}
+
+/**
+ * Returns a Position object with the line and column of node
+ *
+ * @param node node that position will be retrieved from
+ */
+function getPosition(node: Node): Position {
+  const pos: Position = {lineStart: 0, lineEnd: 0, colStart: 0, colEnd: 0};
+  if (node.loc) {
+    pos.lineStart = node.loc.start.line, pos.lineEnd = node.loc.end.line,
+    pos.colStart = node.loc.start.column, pos.colEnd = node.loc.end.column;
+  }
+  return pos;
 }
