@@ -41,7 +41,6 @@ export async function search(content: string): Promise<SearchValue> {
       moduleMap.delete(key);
     }
   });
-  result.requiredModules = moduleMap;
   return result;
 }
 
