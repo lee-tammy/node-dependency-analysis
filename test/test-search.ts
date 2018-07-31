@@ -2,8 +2,8 @@ import test from 'ava';
 import * as search from '../src/search';
 
 test(
-    'searchValue should have http module in standard require' +
-        'http case',
+    `searchValue should have http module in standard require
+        http case`,
     async t => {
       const content = 'const a = require(\'http\');';
       const result = await search.search(content);
@@ -11,7 +11,7 @@ test(
     });
 
 test(
-    'searchValue should not have http module when there are no require calls',
+    `searchValue should not have http module when there are no require calls`,
     async t => {
       const content1 = 'console.log(\'http\')';
       const result1 = await search.search(content1);
@@ -23,14 +23,14 @@ test(
       t.deepEqual(result2.requiredModules.size, 0);
     });
 
-test('searchValue should not contain util modules', async t => {
+test(`searchValue should not contain util modules`, async t => {
   const content = 'const a = require(\'util\');\nconst b = require(\'path\');';
   const result = await search.search(content);
   t.deepEqual(result.requiredModules.size, 0);
 });
 
 test(
-    'searchValue should have http module when require arg in template literals',
+    `searchValue should have http module when require arg in template literals`,
     async t => {
       const content1 = 'const a = require(`${\'http\'}`);';
       const result1 = await search.search(content1);
@@ -41,7 +41,7 @@ test(
       t.true(result2.requiredModules.has('http'));
     });
 
-test('searchValue should have http and fs module', async t => {
+test(`searchValue should have http and fs module`, async t => {
   const content =
       'const a = require(\'http\');\n const b = require(`${\'fs\'}`);';
   const result = await search.search(content);
@@ -49,7 +49,7 @@ test('searchValue should have http and fs module', async t => {
   t.true(result.requiredModules.has('fs'));
 });
 
-test('line number is accurate for search', async t => {
+test(`line number is accurate for search`, async t => {
   const content =
       'const a = require(\'http\');\n const b = require(`${\'fs\'}`);';
   const result = await search.search(content);
@@ -64,8 +64,8 @@ test('line number is accurate for search', async t => {
 });
 
 test(
-    'search function should return correct dynamic arg position with ' +
-        'require arg as a concatenation of strings that forms http',
+    `search function should return correct dynamic arg position with
+        require arg as a concatenation of strings that forms http`,
     async t => {
       const content = 'const a = require(\'h\' + \'t\' + \'t\' + \'p\');';
       const result = await search.search(content);
@@ -73,8 +73,8 @@ test(
     });
 
 test(
-    'search function should return correct dynamic arg position with ' +
-        'require arg as a substring that forms http',
+    `search function should return correct dynamic arg position with 
+        require arg as a substring that forms http`,
     async t => {
       const content1 =
           `const a = \'anotherhttp\'\nconst b = require(a.substring(6));`;
@@ -87,8 +87,8 @@ test(
     });
 
 test(
-    'search function should return correct dynamic arg position with ' +
-        'require arg as a function that returns http',
+    `search function should return correct dynamic arg position with
+        require arg as a function that returns http`,
     async t => {
       const content =
           'function returnHttp(){return \'http\';}\nconst a = require(returnHttp);';
@@ -97,11 +97,12 @@ test(
     });
 
 test(
-    'search function should return dynamic eval position where require callee ' +
-        'is defined as a variable',
+    `search function should return dynamic require position where require callee
+        is defined as a variable`,
     async t => {
-      const content1 =
-          'function something(){ return 1;}\nconst a = require;\n const b = a(\'https\');';
+      const content1 = `function something(){ return 1;}\n
+                        const a = require;\n 
+                        const b = a(\'https\');`;
       const result1 = await search.search(content1);
       t.deepEqual(result1.dynamicRequire[0].lineStart, 2);
     });
