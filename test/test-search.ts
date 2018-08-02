@@ -100,9 +100,29 @@ test(
     `search function should return dynamic require position where require callee
         is defined as a variable`,
     async t => {
-      const content1 = `function something(){ return 1;}\n
-                        const a = require;\n 
+      const content1 = `function something(){ return 1;}
+                        const a = require; 
                         const b = a(\'https\');`;
       const result1 = await search.search(content1);
       t.deepEqual(result1.dynamicRequire[0].lineStart, 2);
+    });
+
+test(
+    `search function should return correct dynamic arg position where require 
+        identifier is returned in a function`,
+    async t => {
+      const content =
+          'function returnRequire(){return require;}\n const a = returnRequire();\nconst b = a(\'http\');';
+      const result = await search.search(content);
+      t.deepEqual(result.dynamicRequire[0].lineStart, 1);
+    });
+
+test(
+    `search function should return correct dynamic arg position where require 
+        identifier is passed as a parameter in a function`,
+    async t => {
+      const content =
+          'function f(a, b){return a(b)}\nconst a = f(require, \'http\');';
+      const result = await search.search(content);
+      t.deepEqual(result.dynamicRequire[0].lineStart, 2);
     });
