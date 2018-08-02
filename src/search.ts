@@ -100,7 +100,8 @@ function getRequiredModules(requireNodes: Node[]): SearchValue {
 }
 
 /**
- * Returns list of positions where there are dynamic require calls
+ * Returns list of positions where there the require identifier is used other than 
+ *     in a call expression
  *
  * @param tree abstract syntax tree
  */
