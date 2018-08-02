@@ -114,7 +114,6 @@ function getDynamicRequireCalls(tree: Node): Position[] {
         // last element is current node and second to last it the node's
         // parent
         const parent: Node = ancestors[ancestors.length - 2];
-        console.log('>>>>>>>PARENT<<<<<<: ' + JSON.stringify(parent, null, 2));
         if (parent.type !== 'CallExpression' || parent.arguments.length !== 1) {
           // Dynamic Require call
 
