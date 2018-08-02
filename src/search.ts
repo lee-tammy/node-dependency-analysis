@@ -6,22 +6,15 @@ const walk = require('acorn/dist/walk');
 export const ioModules: string[] =
     ['http', 'fs', 'https', 'http2', 'net', 'datagram', 'child_process'];
 
-/**
- * requiredModules: A map of I/O module names and the position where they were
- * required in a file
- * dynamicArgs: An array of positions where arguments are dynamically evaluated
- * dynamicRequire: An array of the positions where there are dynamic require
- * calls
- */
 export interface SearchValue {
+  // A map of I/O module names and the position where they were required in a file
   requiredModules: Map<string, Position>;
+  // An array of positions where arguments are dynamically evaluated
   dynamicArgs: Position[];
+  // An array of the positions where there are dynamic require calls
   dynamicRequire: Position[];
 }
 
-/**
- * location of where require is called dynamically
- */
 export interface Position {
   lineStart: number;
   lineEnd: number;
