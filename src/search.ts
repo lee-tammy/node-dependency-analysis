@@ -7,7 +7,8 @@ export const ioModules: string[] =
     ['http', 'fs', 'https', 'http2', 'net', 'datagram', 'child_process'];
 
 export interface SearchValue {
-  // A map of I/O module names and the position where they were required in a file
+  // A map of I/O module names and the position where they were required in a
+  // file
   requiredModules: Map<string, Position>;
   // An array of positions where arguments are dynamically evaluated
   dynamicArgs: Position[];
@@ -100,30 +101,27 @@ function getRequiredModules(requireNodes: Node[]): SearchValue {
 }
 
 /**
- * Returns list of positions where there the require identifier is used other than 
- *     in a call expression
+ * Returns list of positions where there the require identifier is used other
+ * than in a call expression
  *
  * @param tree abstract syntax tree
  */
 function getDynamicRequireCalls(tree: Node): Position[] {
   const dynamicRequireCalls: Position[] = [];
-  walk.ancestor(tree, {
+  walk.fullAncestor(tree, (n: Node, ancestors: Node[]) => {
+    if (n.type === 'Identifier' && n && n !== undefined) {
+      if (n.name === 'require') {
+        // last element is current node and second to last it the node's
+        // parent
+        const parent: Node = ancestors[ancestors.length - 2];
+        console.log('>>>>>>>PARENT<<<<<<: ' + JSON.stringify(parent, null, 2));
+        if (parent.type !== 'CallExpression' || parent.arguments.length !== 1) {
+          // Dynamic Require call
 
-    Identifier(n: Node, ancestors: Node[]) {
-      if (n.type === 'Identifier' && n && n !== undefined) {
-        if (n.name === 'require') {
-          // last element is current node and second to last it the node's
-          // parent
-          const parent: Node = ancestors[ancestors.length - 2];
-          if (parent.type !== 'CallExpression' ||
-              parent.arguments.length !== 1) {
-            // Dynamic Require call
-
-            // Get the entire line which is the second element of ancestors
-            // array b/c 1st is the program
-            const pos: Position = getPosition(ancestors[1]);
-            dynamicRequireCalls.push(pos);
-          }
+          // Get the entire line which is the second element of ancestors
+          // array b/c 1st is the program
+          const pos: Position = getPosition(ancestors[1]);
+          dynamicRequireCalls.push(pos);
         }
       }
     }
