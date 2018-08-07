@@ -58,20 +58,25 @@ export async function getPackagePOIList(pkg: PackageTree): Promise<PointOfIntere
   return packagePOIList;
 }
 
-function findPackagePath(name: string, version: string): string{
+function findPackagePath(packageName: string, parentPath: string): string{
   throw new Error('not implemented');
 }
 
+/**
+ * Gets all the javascript files in a package's directory
+ * 
+ * @param path the package's directory path 
+ */
 export async function getJSFiles(path: string): Promise<string[]> {
   const topLevelFiles: string[] = await filesInDir(path, 'utf8');
   const fileList: string[] = [];
 
   await Promise.all(topLevelFiles.map(async (file) => {
+    const currFile = `${path}${file}`;
     if (file.endsWith('.js')) {
-      fileList.push(`${path}${file}`);
-    } else if ((await fileInfo(`${path}${file}`)).isDirectory() && file !== 'node_modules') {
-      const path2 = `${path}${file}/`;
-      const subArr = await getJSFiles(path2);
+      fileList.push(currFile);
+    } else if ((await fileInfo(currFile)).isDirectory() && file !== 'node_modules') {
+      const subArr = await getJSFiles(`${currFile}/`);
       fileList.push(...subArr);
     }
   }));
