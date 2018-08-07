@@ -1,5 +1,5 @@
-import { getDynamicEval, getIOModules } from './analysis';
-import {filesInDir, fileInfo, readFile} from './util'
+import {getDynamicEval, getIOModules} from './analysis';
+import {fileInfo, filesInDir, readFile} from './util';
 
 export interface PointOfInterest {
   type: string;
@@ -29,20 +29,28 @@ function generatePackageTree(pjson: string): PackageTree {
   //   return result;
 }
 
-function getPOIforPackageTree(packageTree: PackageTree): PackageTree {
-  throw new Error('not implemented');
+async function getPOIForPackageTree(packageTree: PackageTree):
+    Promise<PackageTree> {
+  // throw new Error('not implemented');
   // step 1: get POI for current package
+  const packagePOIList = await getPackagePOIList(packageTree);
   // step 2: add POI to PackageTree Object
+  const tree = {
+    rootPackageName: packageTree.rootPackageName,
+    version: packageTree.version,
+    data: packagePOIList,
+    dependencies: packageTree.dependencies
+  };
+  return tree;
 }
 
-// Should the parameter be a list of jsfiles instead of a packagetree
-//parameter = pkg: PackageTree
-export async function getPackagePOIList(pkg: PackageTree): Promise<PointOfInterest[]> {
+export async function getPackagePOIList(pkg: PackageTree):
+    Promise<PointOfInterest[]> {
   const packagePOIList: PointOfInterest[] = [];
   // calls getPointsOfInterest for each file in package
   // step 1: Locate the package.json/ module folder file for this package
   const path = findPackagePath(pkg.rootPackageName, pkg.version);
-  // step 2: for each file => 
+  // step 2: for each file =>
   //                      get the POI array
   //                      concatenate it with a result array
   const files = await getJSFiles(path);
@@ -53,19 +61,19 @@ export async function getPackagePOIList(pkg: PackageTree): Promise<PointOfIntere
     const filePOIList = getPointsOfInterest(content, file, functionArr);
     packagePOIList.push(...filePOIList);
   }));
-  
+
   // step 3: return the result array
   return packagePOIList;
 }
 
-function findPackagePath(packageName: string, parentPath: string): string{
+function findPackagePath(packageName: string, parentPath: string): string {
   throw new Error('not implemented');
 }
 
 /**
  * Gets all the javascript files in a package's directory
- * 
- * @param path the package's directory path 
+ *
+ * @param path the package's directory path
  */
 export async function getJSFiles(path: string): Promise<string[]> {
   const topLevelFiles: string[] = await filesInDir(path, 'utf8');
@@ -75,7 +83,8 @@ export async function getJSFiles(path: string): Promise<string[]> {
     const currFile = `${path}${file}`;
     if (file.endsWith('.js')) {
       fileList.push(currFile);
-    } else if ((await fileInfo(currFile)).isDirectory() && file !== 'node_modules') {
+    } else if (
+        (await fileInfo(currFile)).isDirectory() && file !== 'node_modules') {
       const subArr = await getJSFiles(`${currFile}/`);
       fileList.push(...subArr);
     }
