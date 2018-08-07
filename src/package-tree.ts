@@ -1,6 +1,5 @@
-import fs from 'fs';
-import { X_OK } from 'constants';
 import { getDynamicEval, getIOModules } from './analysis';
+import {filesInDir, fileInfo, readFile} from './util'
 
 export interface PointOfInterest {
   type: string;
@@ -32,62 +31,50 @@ function generatePackageTree(pjson: string): PackageTree {
 
 function getPOIforPackageTree(packageTree: PackageTree): PackageTree {
   throw new Error('not implemented');
-  /*let updatedTree: PackageTree;
   // step 1: get POI for current package
-  packageTree.dependencies.forEach((pkg) => {
-    const poiList = getPackagePOIList(pkg);
-    updatedTree = {rootPackageName: packageTree.rootPackageName, version:
-  packageTree.version, data: poiList, dependencies: packageTree.dependencies};
-  });
-  return updatedTree;*/
-
   // step 2: add POI to PackageTree Object
 }
 
 // Should the parameter be a list of jsfiles instead of a packagetree
 //parameter = pkg: PackageTree
-export function getPackagePOIList(): PointOfInterest[] {
+export async function getPackagePOIList(pkg: PackageTree): Promise<PointOfInterest[]> {
   const packagePOIList: PointOfInterest[] = [];
   // calls getPointsOfInterest for each file in package
   // step 1: Locate the package.json/ module folder file for this package
+  const path = findPackagePath(pkg.rootPackageName, pkg.version);
   // step 2: for each file => 
   //                      get the POI array
   //                      concatenate it with a result array
-  const files = getJSFiles('./node_modules/tslint/');
-  files.forEach((file) => {
-    const content = fs.readFileSync(file, 'utf8').toString();
+  const files = await getJSFiles(path);
+
+  await Promise.all(files.map(async (file) => {
+    const content = await readFile(file, 'utf8');
     const functionArr: Function[] = [getIOModules, getDynamicEval];
     const filePOIList = getPointsOfInterest(content, file, functionArr);
     packagePOIList.push(...filePOIList);
-  });
+  }));
   
   // step 3: return the result array
   return packagePOIList;
 }
 
-/*export function findPackageDir(name: string, version: string): string{
-  const moduleFolders: string[] = fs.readdirSync('./node_modules/', 'utf8');
-  moduleFolders.find((mod) => {
+function findPackagePath(name: string, version: string): string{
+  throw new Error('not implemented');
+}
 
-    if(mod === name){
-
-    }
-  })
-  return '';
-}*/
-
-// Gets the path of all js files
-export function getJSFiles(dir: string): string[] {
-  const topLevelFiles = fs.readdirSync(dir);
+export async function getJSFiles(path: string): Promise<string[]> {
+  const topLevelFiles: string[] = await filesInDir(path, 'utf8');
   const fileList: string[] = [];
-  topLevelFiles.forEach((file) => {
+
+  await Promise.all(topLevelFiles.map(async (file) => {
     if (file.endsWith('.js')) {
-      fileList.push(`${dir}${file}`);
-    } else if (fs.statSync(`${dir}${file}`).isDirectory()) {
-      const path = `${dir}${file}/`;
-      fileList.push(...getJSFiles(path));
+      fileList.push(`${path}${file}`);
+    } else if ((await fileInfo(`${path}${file}`)).isDirectory() && file !== 'node_modules') {
+      const path2 = `${path}${file}/`;
+      const subArr = await getJSFiles(path2);
+      fileList.push(...subArr);
     }
-  });
+  }));
   return fileList;
 }
 
