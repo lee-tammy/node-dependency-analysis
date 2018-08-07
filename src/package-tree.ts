@@ -34,38 +34,35 @@ function getPOIforPackageTree(packageTree: PackageTree): PackageTree {
   // step 1: get POI for current package
   packageTree.dependencies.forEach((pkg) => {
     const poiList = getPackagePOIList(pkg);
-    updatedTree = {rootPackageName: packageTree.rootPackageName, version: packageTree.version, 
-        data: poiList, dependencies: packageTree.dependencies};
+    updatedTree = {rootPackageName: packageTree.rootPackageName, version:
+  packageTree.version, data: poiList, dependencies: packageTree.dependencies};
   });
   return updatedTree;*/
-  
+
   // step 2: add POI to PackageTree Object
 }
 
-//Should the parameter be a list of jsfiles instead of a packagetree
+// Should the parameter be a list of jsfiles instead of a packagetree
 function getPackagePOIList(pkg: PackageTree): PointOfInterest[] {
   // TODO:
   // calls getPointsOfInterest for each file in package
   // step 1: Locate the package.json/ module folder file for this package
   // step 2: for each file{
-    // get the POI array
-    // concatenate it with a result array
+  // get the POI array
+  // concatenate it with a result array
   // return the result
   throw new Error('not implemented');
-  
 }
 
-// Gets the path of all js files 
-export function getJSFiles(dir: string): string[]{
+// Gets the path of all js files
+export function getJSFiles(dir: string): string[] {
   const topLevelFiles = fs.readdirSync(dir);
   const fileList: string[] = [];
   topLevelFiles.forEach((file) => {
-    if(file.endsWith('.js') || file.endsWith('.ts')){
+    if (file.endsWith('.js') || file.endsWith('.ts')) {
       fileList.push(`${dir}${file}`);
-      console.log(file)
-    }else if(fs.statSync(`${dir}/${file}`).isDirectory()){
+    } else if (fs.statSync(`${dir}/${file}`).isDirectory()) {
       const path = `${dir}${file}`;
-      //console.log(path)
       fileList.push(`${getJSFiles(path)}`);
     }
   });
