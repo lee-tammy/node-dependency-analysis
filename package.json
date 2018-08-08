@@ -5,12 +5,14 @@
   "main": "index.js",
   "dependencies": {
     "acorn": "^5.7.1",
-    "node": "^10.6.0"
+    "node": "^10.6.0",
+    "pify": "^3.0.0"
   },
   "devDependencies": {
     "@types/acorn": "^4.0.3",
     "@types/estree": "0.0.39",
     "@types/node": "^10.5.2",
+    "@types/pify": "^3.0.2",
     "ava": "^0.25.0",
     "gts": "^0.7.1",
     "typescript": "~2.8.0"
