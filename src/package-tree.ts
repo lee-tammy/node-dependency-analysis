@@ -14,45 +14,49 @@ export interface Position {
   colEnd: number;
 }
 
-export interface PackageTree {
-  rootPackageName: string;
+export interface PackageTree<T> {
+  name: string;
   version: string;
-  data: PointOfInterest[];
-  dependencies: PackageTree[];
+  data: T;
+  dependencies: PackageTree<T>[];
 }
 
-function generatePackageTree(pjson: string): PackageTree {
+function generatePackageTree(pjson: string): PackageTree<PointOfInterest[]> {
   // todo -- this function will probably be recursive
+  //TODO: ADD const packageTreeWithPath = resolvePaths(packageTree, 'hi');
   throw new Error('not implemented');
   // compute result
   //   let result: PackageTree;
   //   return result;
 }
 
-async function getPOIForPackageTree(packageTree: PackageTree):
-    Promise<PackageTree> {
-  // throw new Error('not implemented');
-  // step 1: get POI for current package
-  const packagePOIList = await getPackagePOIList(packageTree);
-  // step 2: add POI to PackageTree Object
-  const tree = {
-    rootPackageName: packageTree.rootPackageName,
+//TODO: REVIEW
+// create tests
+async function getPOIForPackageTree(packageTree: PackageTree<string>): Promise<PackageTree<PointOfInterest[]>> {
+  
+  // Get package trees with POI arrays in data field
+  const dependenciesWithPOI: PackageTree<PointOfInterest[]>[] = [];
+  await Promise.all(packageTree.dependencies.map(async (pkg) => {
+    const dependencyPOIList: PackageTree<PointOfInterest[]> = await getPOIForPackageTree(pkg);
+    dependenciesWithPOI.push(dependencyPOIList);
+  }));
+
+  // Get the POI list for this current package
+  const poiList: PointOfInterest[] = await getPackagePOIList(packageTree.data);
+
+  // Create new tree using POI list as data and new list of package trees as dependencies
+  const tree: PackageTree<PointOfInterest[]> = {
+    name: packageTree.name,
     version: packageTree.version,
-    data: packagePOIList,
-    dependencies: packageTree.dependencies
-  };
+    data: poiList,
+    dependencies: dependenciesWithPOI
+  }
   return tree;
 }
 
-export async function getPackagePOIList(pkg: PackageTree):
+export async function getPackagePOIList(path: string):
     Promise<PointOfInterest[]> {
   const packagePOIList: PointOfInterest[] = [];
-  // calls getPointsOfInterest for each file in package
-  // step 1: Locate the package.json/ module folder file for this package
-  const path = findPackagePath(pkg.rootPackageName, pkg.version);
-  // step 2: for each file =>
-  //                      get the POI array
-  //                      concatenate it with a result array
   const files = await getJSFiles(path);
 
   await Promise.all(files.map(async (file) => {
@@ -62,12 +66,44 @@ export async function getPackagePOIList(pkg: PackageTree):
     packagePOIList.push(...filePOIList);
   }));
 
-  // step 3: return the result array
   return packagePOIList;
 }
 
-function findPackagePath(packageName: string, parentPath: string): string {
-  throw new Error('not implemented');
+function resolvePaths(rootNode: PackageTree<null>, rootPath: string): PackageTree<string>{
+  // assign root node's path to rootPath
+  // for each of the root node's dependencies, call resolvePaths recursive function
+  const resolvedNodes: PackageTree<string>[] = [];
+  rootNode.dependencies.forEach((child) => {
+    resolvedNodes.push(resolvePathsRec(child, rootPath));
+  })
+
+  const updatedRoot: PackageTree<string> = {
+    name: rootNode.name,
+    version: rootNode.version, 
+    data: rootPath,
+    dependencies: resolvedNodes
+  }
+
+  return updatedRoot;
+}
+
+function resolvePathsRec(packageNode: PackageTree<null>, parentPath:string): PackageTree<string>{
+  const paths: string[] = [];
+  const resolvedNodes: PackageTree<string>[] = [];
+  paths.push(parentPath);
+  const path = require.resolve(packageNode.name, {paths});
+
+  packageNode.dependencies.forEach((child) => {
+    resolvedNodes.push(resolvePathsRec(child, parentPath));
+  })
+  
+  const updatedNode: PackageTree<string> = {
+    name: packageNode.name,
+    version: packageNode.version,
+    data: path,
+    dependencies: resolvedNodes
+  }
+  return updatedNode;
 }
 
 /**
