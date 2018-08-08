@@ -22,8 +22,9 @@ export interface PackageTree<T> {
 }
 
 function generatePackageTree(pjson: string): PackageTree<PointOfInterest[]> {
-  // todo -- this function will probably be recursive
-  // TODO: ADD const packageTreeWithPath = resolvePaths(packageTree, 'hi');
+  //const emptyPackageTree: PackageTree<null> = (TODO: function that creates 
+  // path should be the cli input
+  //const packageTreeWithPath = resolvePaths(emptyPackageTree, './node_modules/');
   throw new Error('not implemented');
   // compute result
   //   let result: PackageTree;
