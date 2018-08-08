@@ -18,39 +18,41 @@ export interface PackageTree<T> {
   name: string;
   version: string;
   data: T;
-  dependencies: PackageTree<T>[];
+  dependencies: Array<PackageTree<T>>;
 }
 
 function generatePackageTree(pjson: string): PackageTree<PointOfInterest[]> {
   // todo -- this function will probably be recursive
-  //TODO: ADD const packageTreeWithPath = resolvePaths(packageTree, 'hi');
+  // TODO: ADD const packageTreeWithPath = resolvePaths(packageTree, 'hi');
   throw new Error('not implemented');
   // compute result
   //   let result: PackageTree;
   //   return result;
 }
 
-//TODO: REVIEW
+// TODO: REVIEW
 // create tests
-async function getPOIForPackageTree(packageTree: PackageTree<string>): Promise<PackageTree<PointOfInterest[]>> {
-  
+async function getPOIForPackageTree(packageTree: PackageTree<string>):
+    Promise<PackageTree<PointOfInterest[]>> {
   // Get package trees with POI arrays in data field
-  const dependenciesWithPOI: PackageTree<PointOfInterest[]>[] = [];
+  const dependenciesWithPOI: Array<PackageTree<PointOfInterest[]>> = [];
   await Promise.all(packageTree.dependencies.map(async (pkg) => {
-    const dependencyPOIList: PackageTree<PointOfInterest[]> = await getPOIForPackageTree(pkg);
+    const dependencyPOIList: PackageTree<PointOfInterest[]> =
+        await getPOIForPackageTree(pkg);
     dependenciesWithPOI.push(dependencyPOIList);
   }));
 
   // Get the POI list for this current package
   const poiList: PointOfInterest[] = await getPackagePOIList(packageTree.data);
 
-  // Create new tree using POI list as data and new list of package trees as dependencies
+  // Create new tree using POI list as data and new list of package trees as
+  // dependencies
   const tree: PackageTree<PointOfInterest[]> = {
     name: packageTree.name,
     version: packageTree.version,
     data: poiList,
     dependencies: dependenciesWithPOI
-  }
+  };
   return tree;
 }
 
@@ -69,40 +71,43 @@ export async function getPackagePOIList(path: string):
   return packagePOIList;
 }
 
-function resolvePaths(rootNode: PackageTree<null>, rootPath: string): PackageTree<string>{
+function resolvePaths(
+    rootNode: PackageTree<null>, rootPath: string): PackageTree<string> {
   // assign root node's path to rootPath
-  // for each of the root node's dependencies, call resolvePaths recursive function
-  const resolvedNodes: PackageTree<string>[] = [];
+  // for each of the root node's dependencies, call resolvePaths recursive
+  // function
+  const resolvedNodes: Array<PackageTree<string>> = [];
   rootNode.dependencies.forEach((child) => {
     resolvedNodes.push(resolvePathsRec(child, rootPath));
-  })
+  });
 
   const updatedRoot: PackageTree<string> = {
     name: rootNode.name,
-    version: rootNode.version, 
+    version: rootNode.version,
     data: rootPath,
     dependencies: resolvedNodes
-  }
+  };
 
   return updatedRoot;
 }
 
-function resolvePathsRec(packageNode: PackageTree<null>, parentPath:string): PackageTree<string>{
+function resolvePathsRec(
+    packageNode: PackageTree<null>, parentPath: string): PackageTree<string> {
   const paths: string[] = [];
-  const resolvedNodes: PackageTree<string>[] = [];
+  const resolvedNodes: Array<PackageTree<string>> = [];
   paths.push(parentPath);
   const path = require.resolve(packageNode.name, {paths});
 
   packageNode.dependencies.forEach((child) => {
     resolvedNodes.push(resolvePathsRec(child, parentPath));
-  })
-  
+  });
+
   const updatedNode: PackageTree<string> = {
     name: packageNode.name,
     version: packageNode.version,
     data: path,
     dependencies: resolvedNodes
-  }
+  };
   return updatedNode;
 }
 
