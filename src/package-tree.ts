@@ -87,7 +87,7 @@ export async function getPackagePOIList(path: string):
  * @param rootNode the original packageTree root node 
  * @param rootPath the path to the root node
  */
-function resolvePaths(
+export function resolvePaths(
     rootNode: PackageTree<null>, rootPath: string): PackageTree<string> {
   const resolvedNodes: Array<PackageTree<string>> = [];
   rootNode.dependencies.forEach((child) => {
