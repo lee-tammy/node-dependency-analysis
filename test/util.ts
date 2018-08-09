@@ -120,7 +120,8 @@ export class TestProject {
         await writeFileP(
             `${dirname}/package.json`, JSON.stringify(pJson, null, 2));
         await writeFileP(
-            `${dirname}/index.js`, `module.exports = '${pJson.name}@${pJson.version}';`);
+            `${dirname}/index.js`,
+            `module.exports = '${pJson.name}@${pJson.version}';`);
       }));
       // main package.json file
       await writeFileP(

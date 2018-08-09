@@ -1,3 +1,5 @@
+import * as path from 'path';
+
 import {getDynamicEval, getIOModules} from './analysis';
 import {fileInfo, filesInDir, readFile} from './util';
 
@@ -29,10 +31,10 @@ function generatePackageTree(pjson: string): PackageTree<PointOfInterest[]> {
 }
 
 /**
- * Replaces the data of each node in the packageTree with the Points Of 
+ * Replaces the data of each node in the packageTree with the Points Of
  * Interest array
- * 
- * @param packageTree the original package tree with data property as the 
+ *
+ * @param packageTree the original package tree with data property as the
  * node's path
  */
 async function populatePOIInPackageTree(packageTree: PackageTree<string>):
@@ -61,7 +63,7 @@ async function populatePOIInPackageTree(packageTree: PackageTree<string>):
 
 /**
  * Gets a packageTree node's Points of Interest array
- * 
+ *
  * @param path the path to the packageTree node
  */
 export async function getPackagePOIList(path: string):
@@ -80,19 +82,22 @@ export async function getPackagePOIList(path: string):
 }
 
 /**
- * Creates a new packageTree node with a new data property that contains 
- * the path to the package and replaces its dependency property with updated 
+ * Creates a new packageTree node with a new data property that contains
+ * the path to the package and replaces its dependency property with updated
  * packageTree nodes
- * 
- * @param rootNode the original packageTree root node 
+ *
+ * @param rootNode the original packageTree root node
  * @param rootPath the path to the root node
  */
-export function resolvePaths(
-    rootNode: PackageTree<null>, rootPath: string): PackageTree<string> {
+export async function resolvePaths(
+    rootNode: PackageTree<null>,
+    rootPath: string): Promise<PackageTree<string>> {
   const resolvedNodes: Array<PackageTree<string>> = [];
-  rootNode.dependencies.forEach((child) => {
-    resolvedNodes.push(resolvePathsRec(child, rootPath));
-  });
+
+  await Promise.all(rootNode.dependencies.map(async (child) => {
+    const resolvedDependency = await resolvePathsRec(child, rootPath);
+    resolvedNodes.push(resolvedDependency);
+  }));
 
   const updatedRoot: PackageTree<string> = {
     name: rootNode.name,
@@ -106,25 +111,29 @@ export function resolvePaths(
 
 /**
  * Recursive function for resolvePaths
- * 
+ *
  * @param packageNode the original package, where the data property is null
  * @param parentPath The parent path of this current packageTree node
  */
-function resolvePathsRec(
-    packageNode: PackageTree<null>, parentPath: string): PackageTree<string> {
+async function resolvePathsRec(
+    packageNode: PackageTree<null>,
+    parentPath: string): Promise<PackageTree<string>> {
   const paths: string[] = [];
   const resolvedNodes: Array<PackageTree<string>> = [];
   paths.push(parentPath);
-  const path = require.resolve(packageNode.name, {paths});
+  let currPath = path.dirname(require.resolve(packageNode.name, {paths}));
+  while (!(await filesInDir(currPath)).includes('package.json')) {
+    currPath = path.dirname(require.resolve(packageNode.name, {paths}));
+  }
 
-  packageNode.dependencies.forEach((child) => {
-    resolvedNodes.push(resolvePathsRec(child, parentPath));
-  });
+  await Promise.all(packageNode.dependencies.map(async (child) => {
+    resolvedNodes.push(await resolvePathsRec(child, currPath));
+  }));
 
   const updatedNode: PackageTree<string> = {
     name: packageNode.name,
     version: packageNode.version,
-    data: path,
+    data: currPath,
     dependencies: resolvedNodes
   };
   return updatedNode;
@@ -154,10 +163,10 @@ export async function getJSFiles(path: string): Promise<string[]> {
 
 /**
  * Returns all the Points of Interest in a single js file
- * 
+ *
  * @param contents the contents of the js file
  * @param fileName the name of the file
- * @param functionArray the list of detection functions that will be used to 
+ * @param functionArray the list of detection functions that will be used to
  *  find the Points of Interests
  */
 function getPointsOfInterest(
@@ -173,7 +182,7 @@ function getPointsOfInterest(
 
 function main() {
   // TODO:
-  // const emptyPackageTree: PackageTree<null> = (TODO: function that creates 
+  // const emptyPackageTree: PackageTree<null> = (TODO: function that creates
   //                                            package tree with data as null)
   // const packageTreeWithPath = resolvePaths(emptyPackageTree, <CLI INPUT>);
   // const packageTreeWithPOI = populatePOIInPackageTree(packageTreeWithPath);
