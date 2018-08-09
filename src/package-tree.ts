@@ -37,7 +37,7 @@ function generatePackageTree(pjson: string): PackageTree<PointOfInterest[]> {
  * @param packageTree the original package tree with data property as the
  * node's path
  */
-async function populatePOIInPackageTree(packageTree: PackageTree<string>):
+export async function populatePOIInPackageTree(packageTree: PackageTree<string>):
     Promise<PackageTree<PointOfInterest[]>> {
   // Get package trees with POI arrays in data field
   const dependenciesWithPOI: Array<PackageTree<PointOfInterest[]>> = [];
