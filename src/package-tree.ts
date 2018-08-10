@@ -149,7 +149,7 @@ export async function getJSFiles(dirPath: string): Promise<string[]> {
       fileList.push(currFile);
     } else if (
         (await fileInfo(currFile)).isDirectory() && file !== 'node_modules') {
-      const subArr = await getJSFiles(path.join(currFile, '/'));
+      const subArr = await getJSFiles(currFile);
       fileList.push(...subArr);
     }
   }));

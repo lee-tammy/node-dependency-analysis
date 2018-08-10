@@ -1,5 +1,5 @@
 /* TODO: 1. Add more TestProjects and test them
-         2. Test methods that convert PackageTree<string> to 
+         2. Test methods that convert PackageTree<string> to
              PackageTree<PointOfInterest[]>
 */
 import test from 'ava';
