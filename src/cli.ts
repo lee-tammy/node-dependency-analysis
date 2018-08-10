@@ -8,6 +8,6 @@ function main(packageRootDir: string) {
 }
 
 run();
-async function run() {
+function run() {
   pkg.getJSFiles('./node_modules/acorn/');
 }
