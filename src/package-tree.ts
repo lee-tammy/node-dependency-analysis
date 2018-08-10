@@ -107,36 +107,31 @@ export async function resolvePaths(
   };
 
   return updatedRoot;
-}
 
-/**
- * Recursive function for resolvePaths
- *
- * @param packageNode the original package, where the data property is null
- * @param parentPath The parent path of this current packageTree node
- */
-async function resolvePathsRec(
-    packageNode: PackageTree<null>,
-    parentPath: string): Promise<PackageTree<string>> {
-  const paths: string[] = [];
-  const resolvedNodes: Array<PackageTree<string>> = [];
-  paths.push(parentPath);
-  let currPath = path.dirname(require.resolve(packageNode.name, {paths}));
-  while (!(await filesInDir(currPath)).includes('package.json')) {
-    currPath = path.dirname(require.resolve(packageNode.name, {paths}));
+  async function resolvePathsRec(
+      packageNode: PackageTree<null>,
+      parentPath: string): Promise<PackageTree<string>> {
+    const paths: string[] = [];
+    const resolvedNodes: Array<PackageTree<string>> = [];
+    paths.push(parentPath);
+    let currPath = path.dirname(require.resolve(packageNode.name, {paths}));
+
+    while (!(await filesInDir(currPath)).includes('package.json')) {
+      currPath = path.dirname(require.resolve(packageNode.name, {paths}));
+    }
+
+    await Promise.all(packageNode.dependencies.map(async (child) => {
+      resolvedNodes.push(await resolvePathsRec(child, currPath));
+    }));
+
+    const updatedNode: PackageTree<string> = {
+      name: packageNode.name,
+      version: packageNode.version,
+      data: currPath,
+      dependencies: resolvedNodes
+    };
+    return updatedNode;
   }
-
-  await Promise.all(packageNode.dependencies.map(async (child) => {
-    resolvedNodes.push(await resolvePathsRec(child, currPath));
-  }));
-
-  const updatedNode: PackageTree<string> = {
-    name: packageNode.name,
-    version: packageNode.version,
-    data: currPath,
-    dependencies: resolvedNodes
-  };
-  return updatedNode;
 }
 
 /**
