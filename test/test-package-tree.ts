@@ -1,3 +1,7 @@
+/* TODO: 1. Add more TestProjects and test them
+         2. Test methods that convert PackageTree<string> to 
+             PackageTree<PointOfInterest[]>
+*/
 import test from 'ava';
 import path from 'path';
 
@@ -53,11 +57,12 @@ test(
       tests.test1.cleanup();
     });
 
-test('TODO: test2', async t => {
+/* TODO: test2
+test('', async t => {
   // See how the dependency graph looks in test-projects
   const testPath: string = await tests.test2.create();
   tests.test2.cleanup();
-});
+});*/
 
 function sortByName(a: PackageTree<string>, b: PackageTree<string>) {
   if (a.name < b.name) {
