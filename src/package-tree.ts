@@ -144,17 +144,17 @@ async function resolvePathsRec(
  *
  * @param path the package's directory path
  */
-export async function getJSFiles(path: string): Promise<string[]> {
+export async function getJSFiles(dirPath: string): Promise<string[]> {
   const topLevelFiles: string[] = await filesInDir(path, 'utf8');
   const fileList: string[] = [];
 
   await Promise.all(topLevelFiles.map(async (file) => {
-    const currFile = `${path}${file}`;
+    const currFile = path.join(dirPath, file);
     if (file.endsWith('.js')) {
       fileList.push(currFile);
     } else if (
         (await fileInfo(currFile)).isDirectory() && file !== 'node_modules') {
-      const subArr = await getJSFiles(`${currFile}/`);
+      const subArr = await getJSFiles(path.join(currFile, '/'));
       fileList.push(...subArr);
     }
   }));
