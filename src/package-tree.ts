@@ -92,10 +92,12 @@ export async function getPackagePOIList(path: string):
 export async function resolvePaths(
     rootNode: PackageTree<null>,
     rootPath: string): Promise<PackageTree<string>> {
+  const updatedNodesMap = new Map<string, PackageTree<string>>();
   const resolvedNodes: Array<PackageTree<string>> = [];
 
   await Promise.all(rootNode.dependencies.map(async (child) => {
-    const resolvedDependency = await resolvePathsRec(child, rootPath);
+    const resolvedDependency =
+        await resolvePathsRec(child, rootPath, updatedNodesMap);
     resolvedNodes.push(resolvedDependency);
   }));
 
@@ -109,10 +111,12 @@ export async function resolvePaths(
   return updatedRoot;
 
   async function resolvePathsRec(
-      packageNode: PackageTree<null>,
-      parentPath: string): Promise<PackageTree<string>> {
+      packageNode: PackageTree<null>, parentPath: string,
+      updatedNodesMap: Map<string, PackageTree<string>>):
+      Promise<PackageTree<string>> {
     const paths: string[] = [];
     const resolvedNodes: Array<PackageTree<string>> = [];
+
     paths.push(parentPath);
     let currPath = path.dirname(require.resolve(packageNode.name, {paths}));
 
@@ -121,16 +125,23 @@ export async function resolvePaths(
     }
 
     await Promise.all(packageNode.dependencies.map(async (child) => {
-      resolvedNodes.push(await resolvePathsRec(child, currPath));
+      resolvedNodes.push(
+          await resolvePathsRec(child, currPath, updatedNodesMap));
     }));
 
-    const updatedNode: PackageTree<string> = {
-      name: packageNode.name,
-      version: packageNode.version,
-      data: currPath,
-      dependencies: resolvedNodes
-    };
-    return updatedNode;
+    // creates new node if node doesn't exist already
+    if (!updatedNodesMap.has(currPath)) {
+      const updatedNode: PackageTree<string> = {
+        name: packageNode.name,
+        version: packageNode.version,
+        data: currPath,
+        dependencies: resolvedNodes
+      };
+      updatedNodesMap.set(currPath, updatedNode);
+      return updatedNode;
+    } else {
+      return updatedNodesMap.get(currPath)!;
+    }
   }
 }
 
