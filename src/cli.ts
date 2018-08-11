@@ -28,7 +28,7 @@ async function validNodePackage(path: string) {
   try {
     await pify(fs.stat)(path);
   } catch (err) {
-    console.error(`${err}`);
+    console.error(err);
     cli.showHelp(1);
     return false;
   }
