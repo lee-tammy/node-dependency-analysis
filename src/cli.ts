@@ -8,7 +8,7 @@ import {generatePackageTree, populatePOIInPackageTree, resolvePaths} from './pac
 const cli = meow({
   help: `  
     Usage
-      $ TODO <project>
+      node-dependency-analysis [project-Directory]
  
     Options
       --help        Prints this help message.
@@ -53,16 +53,15 @@ async function run(packageRootDir: string) {
     process.exit(1);
   }
 
-  // Step 2: Read package.json
-  const pJson = await pify(fs.readFile)('package.json');
-
   // Step 3: create package tree - generatePackageTree or main function
-  const emptyPackageTree = await generatePackageTree(pJson);
-  const packageTreeWithPath = await resolvePaths(emptyPackageTree, '.');
+  const emptyPackageTree = await generatePackageTree(packageRootDir);
+  console.log("done")
+  const packageTreeWithPath = await resolvePaths(emptyPackageTree, packageRootDir);
+  console.log('done2');
   const packageTreeWithPOI =
       await populatePOIInPackageTree(packageTreeWithPath);
 
   // Step 4: output
   // TODO: Uncomment this line.
-  outputToUser(packageTreeWithPOI);
+ // outputToUser(packageTreeWithPOI);
 }

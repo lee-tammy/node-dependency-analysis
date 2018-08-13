@@ -107,6 +107,9 @@ export async function populatePOIInPackageTree(
 export async function getPackagePOIList(path: string):
     Promise<PointOfInterest[]> {
   const packagePOIList: PointOfInterest[] = [];
+  if(path === ""){
+    return []; 
+  }
   const files = await getJSFiles(path);
 
   await Promise.all(files.map(async (file) => {
@@ -155,16 +158,24 @@ export async function resolvePaths(
     const resolvedNodes: Array<PackageTree<string>> = [];
 
     paths.push(parentPath);
-    let currPath = path.dirname(require.resolve(packageNode.name, {paths}));
 
+    let currPath = "";
+   
+    try{
+
+    currPath = path.dirname(require.resolve(packageNode.name, {paths}));
+        
     while (!(await filesInDir(currPath)).includes('package.json')) {
-      currPath = path.dirname(require.resolve(packageNode.name, {paths}));
+      currPath = path.dirname(currPath);
     }
 
     await Promise.all(packageNode.dependencies.map(async (child) => {
       resolvedNodes.push(
           await resolvePathsRec(child, currPath, updatedNodesMap));
     }));
+   }catch(err){
+       currPath = "";
+    }
 
     // creates new node if node doesn't exist already
     if (!updatedNodesMap.has(currPath)) {
@@ -175,8 +186,10 @@ export async function resolvePaths(
         dependencies: resolvedNodes
       };
       updatedNodesMap.set(currPath, updatedNode);
+      console.log("Updated Node" + JSON.stringify(updatedNode, null, 2));
       return updatedNode;
     } else {
+      
       return updatedNodesMap.get(currPath)!;
     }
   }
@@ -249,6 +262,7 @@ export async function getPackageTreeFromDependencyList(
   await Promise.all(packageTreeArr.map(async element => {
     element.dependencies = await populateDependencies(element, packageLockJson);
   }));
+
   return packageTreeArr.sort(compare);
 }
 
@@ -262,6 +276,9 @@ async function populateDependencies(
     // tslint:disable-next-line:no-any
     packageLockJson: any): Promise<PackageTree[]> {
   const packageName = pkg.name;
+  if(!packageLockJson.dependencies[packageName]){
+    return [];
+  }
   const dependencies = packageLockJson.dependencies[packageName].requires;
   if (!dependencies) {
     return [];
