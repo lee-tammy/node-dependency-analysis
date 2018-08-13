@@ -36,7 +36,7 @@ export interface PackageTree<T = null> {
  * Takes in the root directory of a project and returns returns a PackageTree
  */
 export async function generatePackageTree(
-    rootDir: string, customReadFilep?: ReadFileP): Promise<PackageTree> {
+    rootDir: string, customReadFilep?: ReadFileP): Promise<PackageTree<null>> {
   customReadFilep = customReadFilep || readFilep;
 
   // Step 0: read in package.json and package-lock.json
@@ -151,35 +151,42 @@ export async function resolvePaths(
       packageNode: PackageTree, parentPath: string,
       updatedNodesMap: Map<string, PackageTree<string>>):
       Promise<PackageTree<string>> {
-    const paths: string[] = [];
     const resolvedNodes: Array<PackageTree<string>> = [];
 
-    paths.push(parentPath);
-    let currPath = path.dirname(require.resolve(packageNode.name, {paths}));
-
-    while (!(await filesInDir(currPath)).includes('package.json')) {
-      currPath = path.dirname(require.resolve(packageNode.name, {paths}));
-    }
+    const path = await findPath(packageNode.name, parentPath);
 
     await Promise.all(packageNode.dependencies.map(async (child) => {
       resolvedNodes.push(
-          await resolvePathsRec(child, currPath, updatedNodesMap));
+          await resolvePathsRec(child, path, updatedNodesMap));
     }));
 
     // creates new node if node doesn't exist already
-    if (!updatedNodesMap.has(currPath)) {
+    if (!updatedNodesMap.has(path)) {
       const updatedNode: PackageTree<string> = {
         name: packageNode.name,
         version: packageNode.version,
-        data: currPath,
+        data: path,
         dependencies: resolvedNodes
       };
-      updatedNodesMap.set(currPath, updatedNode);
+      updatedNodesMap.set(path, updatedNode);
       return updatedNode;
     } else {
-      return updatedNodesMap.get(currPath)!;
+      return updatedNodesMap.get(path)!;
     }
   }
+}
+
+export async function findPath(mod: string, parentPath: string): Promise<string>{
+  const moduleFolder = path.join(parentPath, 'node_modules');
+  const filesInFolder = await filesInDir(moduleFolder);
+  if(filesInFolder.includes(mod)){
+    return path.join(moduleFolder, mod);
+  }
+  let currPath = path.dirname(parentPath);
+  while (!(await filesInDir(currPath)).includes('package.json')) {
+    currPath = path.dirname(currPath);
+  }
+  return findPath(mod, currPath);
 }
 
 /**
