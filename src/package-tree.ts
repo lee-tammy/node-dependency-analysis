@@ -1,12 +1,7 @@
-
-import * as fs from 'fs';
 import * as path from 'path';
-import pify from 'pify';
 
 import {getDynamicEval, getIOModules} from './analysis';
-import {fileInfo, filesInDir, readFile} from './util';
-
-export const readFilep = pify(fs.readFile);
+import * as util from './util';
 
 export interface ReadFileP {
   (path: string, encoding: string): Promise<string>;
@@ -37,7 +32,7 @@ export interface PackageTree<T = null> {
  */
 export async function generatePackageTree(
     rootDir: string, customReadFilep?: ReadFileP): Promise<PackageTree<null>> {
-  customReadFilep = customReadFilep || readFilep;
+  customReadFilep = customReadFilep || util.readFile;
 
   // Step 0: read in package.json and package-lock.json
   const pjsonPath = path.join(rootDir, 'package.json');
@@ -110,7 +105,7 @@ export async function getPackagePOIList(path: string):
   const files = await getJSFiles(path);
 
   await Promise.all(files.map(async (file) => {
-    const content = await readFile(file, 'utf8');
+    const content = await util.readFile(file, 'utf8');
     const functionArr: Function[] = [getIOModules, getDynamicEval];
     const filePOIList = getPointsOfInterest(content, file, functionArr);
     packagePOIList.push(...filePOIList);
@@ -153,11 +148,9 @@ export async function resolvePaths(
       Promise<PackageTree<string>> {
     const resolvedNodes: Array<PackageTree<string>> = [];
 
-    const path = await findPath(packageNode.name, parentPath);
-
+    const path: string = await findPath(packageNode.name, parentPath);
     await Promise.all(packageNode.dependencies.map(async (child) => {
-      resolvedNodes.push(
-          await resolvePathsRec(child, path, updatedNodesMap));
+      resolvedNodes.push(await resolvePathsRec(child, path, updatedNodesMap));
     }));
 
     // creates new node if node doesn't exist already
@@ -176,14 +169,24 @@ export async function resolvePaths(
   }
 }
 
-export async function findPath(mod: string, parentPath: string): Promise<string>{
+/**
+ * Gets the package path based on the location of the parent package
+ *
+ * @param mod the package/module
+ * @param parentPath the path of the parent package that depends on mod
+ */
+export async function findPath(
+    mod: string, parentPath: string): Promise<string> {
   const moduleFolder = path.join(parentPath, 'node_modules');
-  const filesInFolder = await filesInDir(moduleFolder);
-  if(filesInFolder.includes(mod)){
-    return path.join(moduleFolder, mod);
+  try {
+    const filesInFolder = await util.readdir(moduleFolder);
+    if (filesInFolder.includes(mod)) {
+      return path.join(moduleFolder, mod);
+    }
+  } catch (err) {
   }
   let currPath = path.dirname(parentPath);
-  while (!(await filesInDir(currPath)).includes('package.json')) {
+  while (!(await util.readdir(currPath)).includes('package.json')) {
     currPath = path.dirname(currPath);
   }
   return findPath(mod, currPath);
@@ -195,7 +198,7 @@ export async function findPath(mod: string, parentPath: string): Promise<string>
  * @param path the package's directory path
  */
 export async function getJSFiles(dirPath: string): Promise<string[]> {
-  const topLevelFiles: string[] = await filesInDir(path, 'utf8');
+  const topLevelFiles: string[] = await util.readdir(dirPath, 'utf8');
   const fileList: string[] = [];
 
   await Promise.all(topLevelFiles.map(async (file) => {
@@ -203,7 +206,7 @@ export async function getJSFiles(dirPath: string): Promise<string[]> {
     if (file.endsWith('.js')) {
       fileList.push(currFile);
     } else if (
-        (await fileInfo(currFile)).isDirectory() && file !== 'node_modules') {
+        (await util.stat(currFile)).isDirectory() && file !== 'node_modules') {
       const subArr = await getJSFiles(currFile);
       fileList.push(...subArr);
     }
@@ -256,6 +259,7 @@ export async function getPackageTreeFromDependencyList(
   await Promise.all(packageTreeArr.map(async element => {
     element.dependencies = await populateDependencies(element, packageLockJson);
   }));
+
   return packageTreeArr.sort(compare);
 }
 
@@ -269,6 +273,9 @@ async function populateDependencies(
     // tslint:disable-next-line:no-any
     packageLockJson: any): Promise<PackageTree[]> {
   const packageName = pkg.name;
+  if (!packageLockJson.dependencies[packageName]) {
+    return [];
+  }
   const dependencies = packageLockJson.dependencies[packageName].requires;
   if (!dependencies) {
     return [];

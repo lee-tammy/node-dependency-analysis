@@ -3,12 +3,12 @@ import meow from 'meow';
 import pify from 'pify';
 
 import {outputToUser} from './output';
-import {generatePackageTree, populatePOIInPackageTree, resolvePaths, findPath} from './package-tree';
+import * as tree from './package-tree';
 
 const cli = meow({
   help: `  
     Usage
-      $ TODO <project>
+      node-dependency-analysis [project-Directory]
  
     Options
       --help        Prints this help message.
@@ -53,12 +53,14 @@ async function run(packageRootDir: string) {
     process.exit(1);
   }
 
-  // Step 2: create package tree - generatePackageTree or main function
-  const emptyPackageTree = await generatePackageTree(packageRootDir);
-  const packageTreeWithPath = await resolvePaths(emptyPackageTree, packageRootDir);
+  // Step 3: create package tree - generatePackageTree or main function
+  const emptyPackageTree = await tree.generatePackageTree(packageRootDir);
+  const packageTreeWithPath =
+      await tree.resolvePaths(emptyPackageTree, packageRootDir);
   const packageTreeWithPOI =
-      await populatePOIInPackageTree(packageTreeWithPath);
+      await tree.populatePOIInPackageTree(packageTreeWithPath);
 
-  // Step 3: output
+  // Step 4: output
+  // TODO: Uncomment this line.
   outputToUser(packageTreeWithPOI);
 }
